@@ -3,14 +3,28 @@ from street import Street
 from colours import Colours
 
 class Field:
-	def __init__(self, preset=0):
-		if preset == 1:
-			# The Daily Str8ts, #2971, by Andrew Stuart (http://www.str8ts.com)
-			blacks = "100110001000100000001001100100010000100000001000010001001100100000001000100011001"
-			values = "600070010007000003780000100000000021000090000100480500009000006000040000000000005"
+	def __init__(self, test=None):
+		self.streets = set()
+		if test != None:
+			blacks = test["blacks"]
+			values = test["values"]
 			self.field = [Square(i, blacks[i] == "1", "123456789" if values[i] == "0" else values[i]) for i in range(81)]
 		else:
 			self.field = [Square(i) for i in range(81)]
+	
+	def collect_streets(self):
+		for square in self.get_squares():
+			if not square.is_black():
+				s = self.get_hstreet(square)
+				if s != None:
+					self.streets.add(s)
+				s = self.get_vstreet(square)
+				if s != None:
+					self.streets.add(s)
+		
+	def iter_streets(self):
+		for s in self.streets:
+			yield s
 	
 	def get_squarexy(self, x, y):
 		if x < 0 or x >= 9 or y < 0 or y >= 9:
@@ -46,19 +60,11 @@ class Field:
 	def get_hstreet(self,square):
 		x = square.getx()
 		y = square.gety()
-		rfinished = lfinished = False
+		rfinished = False
 		street = Street(square)
+		if x-1 >= 0 and not self.get_squarexy(x-1,y).is_black():
+			return None
 		for i in range(1,10):
-			if lfinished and rfinished: 
-				break
-			if not lfinished:
-				try:
-					if not self.get_squarexy(x-i,y).is_black():
-						street.add(self.get_squarexy(x-i,y))
-					else:
-						lfinished = True
-				except:
-						lfinished = True
 			if not rfinished:
 				try:
 					if not self.get_squarexy(x+i,y).is_black():
@@ -67,25 +73,17 @@ class Field:
 						rfinished = True
 				except:
 					rfinished = True
-		print("Square {} is in street of length {}".format(str(square),street.get_length()))
+		#print("Square {} is in street of length {}".format(str(square),street.get_length()))
 		return street
 		
 	def get_vstreet(self,square):
 		x = square.getx()
 		y = square.gety()
-		ufinished = dfinished = False
+		dfinished = False
 		street = Street(square)
+		if y-1 >= 0 and not self.get_squarexy(x,y-1).is_black():
+			return None
 		for i in range(1,10):
-			if ufinished and dfinished: 
-				break
-			if not ufinished:
-				try:
-					if not self.get_squarexy(x,y-1).is_black():
-						street.add(self.get_squarexy(x,y-1))
-					else:
-						ufinished = True
-				except:
-						ufinished = True
 			if not dfinished:
 				try:
 					if not self.get_squarexy(x,y+i).is_black():
@@ -94,30 +92,45 @@ class Field:
 						dfinished = True
 				except:
 					dfinished = True
-		print("Square {} is in street of length {}".format(str(square),street.get_length()))
+		#print("Square {} is in street of length {}".format(str(square),street.get_length()))
 		return street
+	
+	def get_rest_without_street(self,street):
+		if street.is_horizontal():
+			y = street.gety()
+			for x in range(9):
+				if not street.contains(self.get_squarexy(x,y)):
+					yield self.get_squarexy(x,y)
+		else:
+			x = street.getx()
+			for y in range(9):
+				if not street.contains(self.get_squarexy(x,y)):
+					yield self.get_squarexy(x,y)
+	
+	def remove_street_options_from_rest(self,street):
+		street_options = street.get_options()
+		if len(street_options) <9 and len(street_options) < street.get_length() * 2:
+			removables = ("".join(sorted(street_options))[len(street_options) -
+								street.get_length():street.get_length()])
+			streetsum = ""
+			for o in removables:
+				streetsum = ""
+				for s in self.get_rest_without_street(street):
+					streetsum += str(s)
+					s.remove_option(o)
+	
 	
 	def eliminate_possibilities(self):
 		for square in self.get_filled_squares():
 			self.eliminate_rowcol(square)
-			if not square.is_black():
-				self.eliminate_streets(square) # redundancy because we check every street length(street) times
-			
-		#eliminate_vstreet(self, square)
-	
-	def eliminate_street(self,street, square):
-		for s in street.get_squares():
-			if s != square:
-				for i in range(1,street.get_min_possible()):
-					s.remove_option(i)
-				for i in range(9,street.get_max_possible(), -1):
-					s.remove_option(i)
-	
-	def eliminate_streets(self, square):
-		v = square.get_value()
-		self.eliminate_street(self.get_hstreet(square),square)
-		self.eliminate_street(self.get_vstreet(square),square)
-	
+			#if not square.is_black():
+				#self.eliminate_streets(square) # redundancy because we check every street length(street) times
+		for street in self.iter_streets():
+			street.eliminate_nonconsec()
+			self.remove_street_options_from_rest(street)
+			for square in street.iter_filled():
+				street.eliminate_street(square)
+		
 	def eliminate_rowcol(self,square):
 		v = square.get_value()
 		for s in self.get_row(square):
@@ -230,3 +243,6 @@ class Field:
 		s += "\n".join(sa) +"\n" + "+-------"*9 + "+"
 		print(s)
 		return s
+		
+	def get_total_length(self):
+		return len("".join(s.get_options() for s in self.get_squares()))

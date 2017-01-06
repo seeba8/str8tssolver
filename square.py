@@ -15,13 +15,19 @@ class Square:
 		return self.y
 	
 	def set_value(self, v):
+		if self.is_black():
+			raise Exception
 		self.val = v
 	
 	def get_value(self):
 		return self.val if len(self.val) == 1 else "0"
 	
 	def get_options(self):
-		return self.val if len(self.val) > 1 else "0"
+		return self.val
+	
+	def iter_options(self):
+		for o in self.val:
+			yield o
 		
 	def set_black(self):
 		self.black = True
@@ -30,6 +36,8 @@ class Square:
 		return self.black
 		
 	def remove_option(self, v):
+		if self.is_black():
+			return False
 		v = str(v)
 		if len(self.val) == 1: 
 			return False # Don't remove the last option as it would be an error
@@ -38,5 +46,5 @@ class Square:
 		return b
 		
 	def __str__(self):
-		return "({}: {},{})".format(self.get_value() if self.is_number() else "", 
+		return "({}: {},{})".format(self.get_value() if self.is_number() else " ", 
 									self.getx(), self.gety())
