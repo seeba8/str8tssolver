@@ -19,34 +19,121 @@ class Field:
 		else:
 			self.field = [Square(i) for i in range(81)]
 	
+	def get_squarexy(self, x, y):
+		return self.get_square(y*9+x)
+		
+	def get_square(self,i):
+		return self.field[i]
+	
 	def eliminate_possibilities(self):
 		for square in self.field:
 			eliminate_row(self, square)
 			eliminate_column(self, square)
 			eliminate_hstreet(self, square)
 			eliminate_vstreet(self, square)
-
-	def eliminate_row(self, square):
-		for i in range(8):
-			if square.is_number(i, square.gety()):
-				yield
 				
-	def __str__(self):
+	def oldprint(self):
 		s = Colours.GREEN
 		for i in range(81):
 			if i % 9 == 0:
 				s += "\n"
-			if self.field[i].is_black():
-				if not self.field[i].is_number():
+			if self.get_square(i).is_black():
+				if not self.get_square(i).is_number():
 					s += "\u2588"
 				else: 
-					s += Colours.GB + Colours.BLACK + self.field[i].get_value()	+ Colours.BB + Colours.GREEN
+					s += (Colours.GB + Colours.BLACK + self.get_square(i).get_value() 
+							+ Colours.BB + Colours.GREEN)
 			else:
-				if self.field[i].is_number():
-					s += self.field[i].get_value()
+				if self.get_square(i).is_number():
+					s += self.get_square(i).get_value()
 				else:
 					s += " "
 			s += "|"
+		return s
+	
+	def show(self):
+		s = Colours.GREEN
+		sa = []
+		for i in range(81):
+			if i % 9 == 0:
+				s += "\n".join(sa) + "\n"
+				s += "+-------"*9 + "+\n"
+				sa = ["|  ","|  ","|  "]
+			if self.get_square(i).is_black():
+				if not self.get_square(i).is_number():
+					sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
+				else: 
+					sa[0] += "\u2588\u2588\u2588"
+					sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value() 
+							+ Colours.BB + Colours.GREEN+ "\u2588")
+					sa[2] += "\u2588\u2588\u2588"
+			else:
+				if self.get_square(i).is_number():
+					sa[0] += "   "
+					sa[1] += " " + self.get_square(i).get_value() + " "
+					sa[2] += "   "
+				else:
+					sa = [sa[i] + "   " for i in range(3)]
+			sa = [sa[i] + "  |  " for i in range(3)]
+		s += "\n".join(sa) +"\n" + "+-------"*9 + "+"
+		print(s)
+		return s
+		
+	def __str__(self):
+		s = Colours.GREEN
+		sa = []
+		for i in range(81):
+			if i % 9 == 0:
+				s += "\n".join(sa) + "\n"
+				s += "+-------"*9 + "+\n"
+				sa = ["|  ","|  ","|  "]
+			if self.get_square(i).is_black():
+				if not self.get_square(i).is_number():
+					sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
+				else: 
+					sa[0] += "\u2588\u2588\u2588"
+					sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value() 
+							+ Colours.BB + Colours.GREEN+ "\u2588")
+					sa[2] += "\u2588\u2588\u2588"
+			else:
+				if self.get_square(i).is_number():
+					sa[0] += "   "
+					sa[1] += " " + self.get_square(i).get_value() + " "
+					sa[2] += "   "
+				else:
+					sa = [sa[i] + "   " for i in range(3)]
+			sa = [sa[i] + "  |  " for i in range(3)]
+		s += "\n".join(sa) +"\n" + "+-------"*9 + "+"
+		return s
+	
+	def show_hints(self):
+		s = Colours.GREEN
+		sa = []
+		for i in range(81):
+			if i % 9 == 0:
+				s += "\n".join(sa) + "\n"
+				s += "+-------"*9 + "+\n"
+				sa = ["|  ","|  ","|  "]
+			if self.get_square(i).is_black():
+				if not self.get_square(i).is_number():
+					sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
+				else: 
+					sa[0] += "\u2588\u2588\u2588"
+					sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value() 
+							+ Colours.BB + Colours.GREEN+ "\u2588")
+					sa[2] += "\u2588\u2588\u2588"
+			else:
+				if self.get_square(i).is_number():
+					sa[0] += "   "
+					sa[1] += " " + self.get_square(i).get_value() + " "
+					sa[2] += "   "
+				else:
+					o = self.get_square(i).get_options()
+					options = "".join([str(i) if str(i) in o else " " for i in range(1,10) ])
+					sa = [sa[i] + options[3*i:3*(i+1)] for i in range(3)]
+			sa = [sa[i] + "  |  " for i in range(3)]
+		s += "\n".join(sa) +"\n" + "+-------"*9 + "+"
+		print(s)
 		return s
 				
 			
@@ -71,6 +158,9 @@ class Square:
 	
 	def get_value(self):
 		return self.val if len(self.val) == 1 else "0"
+	
+	def get_options(self):
+		return self.val if len(self.val) > 1 else "0"
 		
 	def set_black(self):
 		self.black = True
@@ -87,7 +177,8 @@ class Square:
 	
 def main():
 	f = Field(1)
-	print(str(f))
+	f.show()
+	f.show_hints()
 
 
 if __name__ == "__main__":
