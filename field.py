@@ -53,49 +53,45 @@ class Field:
 
     def get_row(self, square):
         for i in range(9):
-            yield self.get_squarexy(i, square.gety())
+            yield self.get_squarexy(i, square.y)
 
     def get_column(self, square):
         for i in range(9):
-            yield self.get_squarexy(square.getx(), i)
+            yield self.get_squarexy(square.x, i)
 
     def get_hstreet(self, square):
-        x = square.getx()
-        y = square.gety()
-        rfinished = False
-        street = Street(square)
+        x = square.x
+        y = square.y
+        street = {square}
         if x - 1 >= 0 and not self.get_squarexy(x - 1, y).is_black():
             return None
         for i in range(1, 10):
-            if not rfinished:
-                try:
-                    if not self.get_squarexy(x + i, y).is_black():
-                        street.add(self.get_squarexy(x + i, y))
-                    else:
-                        rfinished = True
-                except:
-                    rfinished = True
-        # print("Square {} is in street of length {}".format(str(square),street.get_length()))
-        return street
+            try:
+                if not self.get_squarexy(x + i, y).is_black():
+                    street.add(self.get_squarexy(x + i, y))
+                else:
+                    return Street(street)
+            except:
+                return Street(street)
+        # print("Square {} is in street of length {}".format(str(square),len(street)))
+        return Street(street)
 
     def get_vstreet(self, square):
-        x = square.getx()
-        y = square.gety()
-        dfinished = False
-        street = Street(square)
+        x = square.x
+        y = square.y
+        street = {square}
         if y - 1 >= 0 and not self.get_squarexy(x, y - 1).is_black():
             return None
         for i in range(1, 10):
-            if not dfinished:
-                try:
-                    if not self.get_squarexy(x, y + i).is_black():
-                        street.add(self.get_squarexy(x, y + i))
-                    else:
-                        dfinished = True
-                except:
-                    dfinished = True
-        # print("Square {} is in street of length {}".format(str(square),street.get_length()))
-        return street
+            try:
+                if not self.get_squarexy(x, y + i).is_black():
+                    street.add(self.get_squarexy(x, y + i))
+                else:
+                    return Street(street)
+            except:
+                return Street(street)
+        # print("Square {} is in street of length {}".format(str(square),len(street)))
+        return Street(street)
 
     def get_rest_without_street(self, street):
         if street.is_horizontal():
@@ -111,9 +107,9 @@ class Field:
 
     def remove_street_options_from_rest(self, street):
         street_options = street.get_options()
-        if len(street_options) < 9 and len(street_options) < street.get_length() * 2:
+        if len(street_options) < 9 and len(street_options) < len(street) * 2:
             removables = ("".join(sorted(street_options))[len(street_options) -
-                                                          street.get_length():street.get_length()])
+                                                          len(street):len(street)])
             streetsum = ""
             for o in removables:
                 streetsum = ""
@@ -129,8 +125,9 @@ class Field:
         for street in self.iter_streets():
             street.eliminate_nonconsec()
             self.remove_street_options_from_rest(street)
-            for square in street.iter_filled():
-                street.eliminate_street(square)
+            for square in street:
+                if square.is_number():
+                    street.eliminate_street(square)
 
     def eliminate_rowcol(self, square):
         v = square.get_value()

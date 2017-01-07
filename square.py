@@ -1,18 +1,26 @@
 class Square:
     def __init__(self, i, b=False, value="123456789"):
         self.val = value
-        self.x = i % 9
-        self.y = i // 9
+        self._x = i % 9
+        self._y = i // 9
         self.black = b
-
+    
+    @property
+    def x(self):
+        return self._x
+    
+    @property
+    def y(self):
+        return self._y
+    
     def is_number(self):
         return len(self.val) == 1
 
-    def getx(self):
-        return self.x
+    #def getx(self):
+        #return self.x
 
-    def gety(self):
-        return self.y
+    #def gety(self):
+        #return self.y
 
     def set_value(self, v):
         if self.is_black():
@@ -47,4 +55,4 @@ class Square:
 
     def __str__(self):
         return "({}: {},{})".format(self.get_value() if self.is_number() else " ",
-                                    self.getx(), self.gety())
+                                    self.x, self.y)

@@ -2,82 +2,72 @@ from square import Square
 
 
 class Street:
-    def __init__(self, square):
-        self.street = set()
-        self.street.add(square)
-
-    def add(self, square):
-        self.street.add(square)
+    def __init__(self, street):
+        self.street = street
+        
 
     def contains(self, square):
         return square in self.street
 
-    def get_length(self):
+    def __len__(self):
         return len(self.street)
-
-    def iter_filled(self):
-        for s in self.iter_squares():
-            if s.is_number():
-                yield s
-
-    def iter_squares(self):
+    
+    def __iter__(self):
         for s in self.street:
             yield s
 
     def get_options(self):
         o = set()
-        for s in self.iter_squares():
+        for s in self:
             o = o | set(s.get_options())
         return o
 
     def gety(self):
-        if self.get_length() == 1:
-            for s in self.iter_squares():
-                return s.gety()
+        if len(self) == 1:
+            return next(iter(self)).y
         topleft = None
-        for s in self.iter_squares():
+        for s in self:
             if topleft == None:
                 topleft = s
             else:
-                if topleft.gety() == s.gety():
-                    return topleft.gety()
+                if topleft.y == s.y:
+                    return topleft.y
                 else:
                     raise NameError("NotHorizontal")
 
     def getx(self):
-        if self.get_length() == 1:
-            for s in self.iter_squares():
-                return s.getx()
+        if len(self) == 1:
+            return next(iter(self)).x
         topleft = None
-        for s in self.iter_squares():
+        for s in self:
             if topleft == None:
                 topleft = s
             else:
-                if topleft.getx() == s.getx():
-                    return topleft.getx()
+                if topleft.x == s.x:
+                    return topleft.x
                 else:
                     raise NameError("NotVertical")
 
     def is_vertical(self):
-        if self.get_length() == 1:
+        if len(self) == 1:
             return True
         topleft = None
-        for s in self.iter_squares():
+        for s in self:
             if topleft == None:
                 topleft = s
             else:
-                return topleft.getx() == s.getx()
+                return topleft.x == s.x
         return False
 
     def is_horizontal(self):
-        if self.get_length() == 1:
+        if len(self) == 1:
             return True
         topleft = None
-        for s in self.iter_squares():
+        for s in self:
             if topleft == None:
                 topleft = s
             else:
-                return topleft.gety() == s.gety()
+                return topleft.y == s.y
         return False
 
     def get_min(self):
@@ -88,7 +78,7 @@ class Street:
         if self.get_max() == 0:
             return 1
         else:
-            return max(1, self.get_max() - self.get_length() + 1)
+            return max(1, self.get_max() - len(self) + 1)
 
     def get_max(self):
         m = max(int(s.get_value()) if s.is_number() else 0 for s in self.street)
@@ -98,29 +88,29 @@ class Street:
         if self.get_min() == 0:
             return 9
         else:
-            return min(9, self.get_min() + self.get_length() - 1)
+            return min(9, self.get_min() + len(self) - 1)
 
     def has_option(self, o, nothere):
-        for s in self.iter_squares():
+        for s in self:
             if s != nothere and str(o) in s.get_options():
                 return True
         return False
 
     def can_be_consecutive(self, s, o):
-        minval = max(1, int(o) - self.get_length() + 1)
-        maxval = min(9, int(o) + self.get_length() - 1)
+        minval = max(1, int(o) - len(self) + 1)
+        maxval = min(9, int(o) + len(self) - 1)
         l = 1
-        for i in range(1, self.get_length()):
+        for i in range(1, len(self)):
             if not int(o) - i < minval and self.has_option(int(o) - i, s):
                 l += 1
             if not int(o) + i > maxval and self.has_option(int(o) + i, s):
                 l += 1
-        return l >= self.get_length()
+        return l >= len(self)
 
     def eliminate_nonconsec(self):
-        if self.get_length() == 1:
+        if len(self) == 1:
             return
-        for s in self.iter_squares():
+        for s in self:
             for o in s.iter_options():
                 if not self.can_be_consecutive(s, o):
                     s.remove_option(o)
@@ -128,7 +118,7 @@ class Street:
                 # max/min also for options
 
     def eliminate_street(self, square):
-        for s in self.iter_squares():
+        for s in self:
             if s != square:
                 for i in range(1, self.get_min_possible()):
                     s.remove_option(i)
@@ -138,9 +128,9 @@ class Street:
                     except:
                         print(square)
                         print("maxpos" + str(self.get_max_possible()))
-                        print("len" + str(self.get_length()))
+                        print("len" + str(len(self)))
                         print("squares:")
-                        for s2 in self.iter_squares():
+                        for s2 in self:
                             print(str(s2))
                         raise
                     # eliminate nonconsecutives
@@ -149,10 +139,10 @@ class Street:
     def __str__(self):
         topleft = None
         horizontal = False
-        for s in self.iter_squares():
-            if topleft == None or s.getx() < topleft.getx() or s.gety() < topleft.gety():
+        for s in self:
+            if topleft == None or s.x < topleft.x or s.y < topleft.y:
                 topleft = s
-            if topleft != None and s.getx() > topleft.getx():
+            if topleft != None and s.x > topleft.x:
                 horizontal = True
-        return "pos=({},{}), len={},{}".format(topleft.getx(), topleft.gety(),
+        return "pos=({},{}), len={},{}".format(topleft.x, topleft.y,
                                                len(self.street), "h" if horizontal else "v")
