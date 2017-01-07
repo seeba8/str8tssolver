@@ -202,7 +202,7 @@ class Field:
                 else:
                     sa[0] += "\u2588\u2588\u2588"
                     sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value()
-                              + Colours.BB + Colours.GREEN + "\u2588")
+                              + Colours.DEFBG + Colours.GREEN + "\u2588")
                     sa[2] += "\u2588\u2588\u2588"
             else:
                 if self.get_square(i).is_number():
@@ -229,7 +229,7 @@ class Field:
                 else:
                     sa[0] += "\u2588\u2588\u2588"
                     sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value()
-                              + Colours.BB + Colours.GREEN + "\u2588")
+                              + Colours.DEFBG + Colours.GREEN + "\u2588")
                     sa[2] += "\u2588\u2588\u2588"
             else:
                 if self.get_square(i).is_number():
