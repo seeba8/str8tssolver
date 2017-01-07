@@ -26,9 +26,15 @@ class Square:
         if self.is_black():
             raise Exception
         self.val = v
-
+    
+    # def __int__(self):
+        # if self.is_number(): 
+            # return int(self.val)
+        # else:
+            # raise NameError("Not found yet")
+    
     def get_value(self):
-        return self.val if len(self.val) == 1 else "0"
+        return self.val if len(self.val) == 1 else "asd"
 
     def get_options(self):
         return self.val

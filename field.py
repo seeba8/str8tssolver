@@ -51,13 +51,17 @@ class Field:
             if s.is_number():
                 yield s
 
-    def get_row(self, square):
+    def get_row(self, square, without_square=False):
         for i in range(9):
-            yield self.get_squarexy(i, square.y)
+            s = self.get_squarexy(i, square.y)
+            if not without_square or s != square:
+                yield s
 
-    def get_column(self, square):
+    def get_column(self, square, without_square=False):
         for i in range(9):
-            yield self.get_squarexy(square.x, i)
+            s = self.get_squarexy(square.x, i)
+            if not without_square or s != square:
+                yield s
 
     def get_hstreet(self, square):
         x = square.x
@@ -94,15 +98,15 @@ class Field:
         return Street(street)
 
     def get_rest_without_street(self, street):
-        if street.is_horizontal():
-            y = street.gety()
+        if street.is_horizontal:
+            y = street.y
             for x in range(9):
-                if not street.contains(self.get_squarexy(x, y)):
+                if not self.get_squarexy(x, y) in street:
                     yield self.get_squarexy(x, y)
         else:
-            x = street.getx()
+            x = street.x
             for y in range(9):
-                if not street.contains(self.get_squarexy(x, y)):
+                if not self.get_squarexy(x, y) in street:
                     yield self.get_squarexy(x, y)
 
     def remove_street_options_from_rest(self, street):
@@ -120,45 +124,22 @@ class Field:
     def eliminate_possibilities(self):
         for square in self.get_filled_squares():
             self.eliminate_rowcol(square)
-        # if not square.is_black():
-        # self.eliminate_streets(square) # redundancy because we check every street length(street) times
         for street in self.iter_streets():
             street.eliminate_nonconsec()
             self.remove_street_options_from_rest(street)
             for square in street:
                 if square.is_number():
-                    street.eliminate_street(square)
+                    street.eliminate_out_of_range(square)
 
     def eliminate_rowcol(self, square):
         v = square.get_value()
-        for s in self.get_row(square):
-            if s != square:
-                s.remove_option(v)
-        for s in self.get_column(square):
-            if s != square:
-                s.remove_option(v)
-
-    def oldprint(self):
-        s = Colours.GREEN
-        for i in range(81):
-            if i % 9 == 0:
-                s += "\n"
-            if self.get_square(i).is_black():
-                if not self.get_square(i).is_number():
-                    s += "\u2588"
-                else:
-                    s += (Colours.GB + Colours.BLACK + self.get_square(i).get_value()
-                          + Colours.BB + Colours.GREEN)
-            else:
-                if self.get_square(i).is_number():
-                    s += self.get_square(i).get_value()
-                else:
-                    s += " "
-            s += "|"
-        return s
-
-    def show(self):
-        s = Colours.GREEN
+        for s in self.get_row(square,True):
+            s.remove_option(v)
+        for s in self.get_column(square,True):
+            s.remove_option(v)
+  
+    def construct_output(self, show_hints=False):
+        s = ""
         sa = []
         for i in range(81):
             if i % 9 == 0:
@@ -170,8 +151,7 @@ class Field:
                     sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
                 else:
                     sa[0] += "\u2588\u2588\u2588"
-                    sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value()
-                              + Colours.BB + Colours.GREEN + "\u2588")
+                    sa[1] += ("\u2588" + self.get_square(i).get_value() + "\u2588")
                     sa[2] += "\u2588\u2588\u2588"
             else:
                 if self.get_square(i).is_number():
@@ -179,66 +159,25 @@ class Field:
                     sa[1] += " " + self.get_square(i).get_value() + " "
                     sa[2] += "   "
                 else:
-                    sa = [sa[i] + "   " for i in range(3)]
+                    if show_hints:
+                        o = self.get_square(i).get_options()
+                        options = "".join([str(i) if str(i) in o else " " for i in range(1, 10)])
+                        sa = [sa[i] + options[3 * i:3 * (i + 1)] for i in range(3)]
+                    else:
+                        sa = [sa[i] + "   " for i in range(3)]
             sa = [sa[i] + "  |  " for i in range(3)]
         s += "\n".join(sa) + "\n" + "+-------" * 9 + "+"
-        print(s)
         return s
 
     def __str__(self):
-        s = Colours.GREEN
-        sa = []
-        for i in range(81):
-            if i % 9 == 0:
-                s += "\n".join(sa) + "\n"
-                s += "+-------" * 9 + "+\n"
-                sa = ["|  ", "|  ", "|  "]
-            if self.get_square(i).is_black():
-                if not self.get_square(i).is_number():
-                    sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
-                else:
-                    sa[0] += "\u2588\u2588\u2588"
-                    sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value()
-                              + Colours.DEFBG + Colours.GREEN + "\u2588")
-                    sa[2] += "\u2588\u2588\u2588"
-            else:
-                if self.get_square(i).is_number():
-                    sa[0] += "   "
-                    sa[1] += " " + self.get_square(i).get_value() + " "
-                    sa[2] += "   "
-                else:
-                    sa = [sa[i] + "   " for i in range(3)]
-            sa = [sa[i] + "  |  " for i in range(3)]
-        s += "\n".join(sa) + "\n" + "+-------" * 9 + "+"
-        return s
+        return self.construct_output()
 
+    def show(self):
+        print(str(self))
+        return str(self)    
+    
     def show_hints(self):
-        s = Colours.GREEN
-        sa = []
-        for i in range(81):
-            if i % 9 == 0:
-                s += "\n".join(sa) + "\n"
-                s += "+-------" * 9 + "+\n"
-                sa = ["|  ", "|  ", "|  "]
-            if self.get_square(i).is_black():
-                if not self.get_square(i).is_number():
-                    sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
-                else:
-                    sa[0] += "\u2588\u2588\u2588"
-                    sa[1] += ("\u2588" + Colours.GB + Colours.BLACK + self.get_square(i).get_value()
-                              + Colours.DEFBG + Colours.GREEN + "\u2588")
-                    sa[2] += "\u2588\u2588\u2588"
-            else:
-                if self.get_square(i).is_number():
-                    sa[0] += "   "
-                    sa[1] += " " + self.get_square(i).get_value() + " "
-                    sa[2] += "   "
-                else:
-                    o = self.get_square(i).get_options()
-                    options = "".join([str(i) if str(i) in o else " " for i in range(1, 10)])
-                    sa = [sa[i] + options[3 * i:3 * (i + 1)] for i in range(3)]
-            sa = [sa[i] + "  |  " for i in range(3)]
-        s += "\n".join(sa) + "\n" + "+-------" * 9 + "+"
+        s = self.construct_output(True)
         print(s)
         return s
 

@@ -4,10 +4,13 @@ from square import Square
 class Street:
     def __init__(self, street):
         self.street = street
+        self._y = self._gety()
+        self._x = self._getx()
+        self._h = self._is_horizontal()
+        self._v = self._is_vertical()
         
-
-    def contains(self, square):
-        return square in self.street
+    def __contains__(self,s):
+        return s in self.street
 
     def __len__(self):
         return len(self.street)
@@ -22,7 +25,23 @@ class Street:
             o = o | set(s.get_options())
         return o
 
-    def gety(self):
+    @property
+    def y(self):
+        return self._y
+        
+    @property
+    def x(self):
+        return self._x
+    
+    @property
+    def is_horizontal(self):
+        return self._h
+    
+    @property
+    def is_vertical(self):
+        return self._v
+        
+    def _gety(self):
         if len(self) == 1:
             return next(iter(self)).y
         topleft = None
@@ -33,9 +52,10 @@ class Street:
                 if topleft.y == s.y:
                     return topleft.y
                 else:
-                    raise NameError("NotHorizontal")
-
-    def getx(self):
+                    if topleft.y > s.y:
+                        topleft = s
+                   
+    def _getx(self):
         if len(self) == 1:
             return next(iter(self)).x
         topleft = None
@@ -46,9 +66,10 @@ class Street:
                 if topleft.x == s.x:
                     return topleft.x
                 else:
-                    raise NameError("NotVertical")
+                    if topleft.x > s.x:
+                        topleft = s
 
-    def is_vertical(self):
+    def _is_vertical(self):
         if len(self) == 1:
             return True
         topleft = None
@@ -59,7 +80,7 @@ class Street:
                 return topleft.x == s.x
         return False
 
-    def is_horizontal(self):
+    def _is_horizontal(self):
         if len(self) == 1:
             return True
         topleft = None
@@ -117,24 +138,14 @@ class Street:
                 # eliminate nonconsecutives
                 # max/min also for options
 
-    def eliminate_street(self, square):
+    def eliminate_out_of_range(self, square):
         for s in self:
             if s != square:
                 for i in range(1, self.get_min_possible()):
                     s.remove_option(i)
                 for i in range(9, self.get_max_possible(), -1):
-                    try:
-                        s.remove_option(i)
-                    except:
-                        print(square)
-                        print("maxpos" + str(self.get_max_possible()))
-                        print("len" + str(len(self)))
-                        print("squares:")
-                        for s2 in self:
-                            print(str(s2))
-                        raise
-                    # eliminate nonconsecutives
-                    # max/min also for options
+                    s.remove_option(i)
+                   
 
     def __str__(self):
         topleft = None
