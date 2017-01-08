@@ -40,14 +40,8 @@ def main():
         f = Field({"blacks": args.values[1], "values": args.values[0]})
     else:
         f = Field()
-    f.collect_streets()
     f.show()
-    last_perf = 0
-    current_perf = 1
-    while (last_perf != current_perf):
-        last_perf = f.get_total_length()
-        f.eliminate_possibilities()
-        current_perf = f.get_total_length()
+    print(f.solve())
     f.show_hints()
 
 

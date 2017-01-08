@@ -3,7 +3,7 @@ class Square:
         self.val = value
         self._x = i % 9
         self._y = i // 9
-        self.black = b
+        self._is_black = b
     
     @property
     def x(self):
@@ -12,6 +12,10 @@ class Square:
     @property
     def y(self):
         return self._y
+    
+    @property
+    def is_black(self):
+        return self._is_black
     
     def is_number(self):
         return len(self.val) == 1
@@ -34,7 +38,9 @@ class Square:
             # raise NameError("Not found yet")
     
     def get_value(self):
-        return self.val if len(self.val) == 1 else "asd"
+        if len(self.val) == 1:
+            return self.val
+        raise NameError("NotAValue")
 
     def get_options(self):
         return self.val
@@ -43,14 +49,8 @@ class Square:
         for o in self.val:
             yield o
 
-    def set_black(self):
-        self.black = True
-
-    def is_black(self):
-        return self.black
-
     def remove_option(self, v):
-        if self.is_black():
+        if self.is_black:
             return False
         v = str(v)
         if len(self.val) == 1:

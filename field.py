@@ -9,14 +9,32 @@ class Field:
         if test != None:
             blacks = test["blacks"]
             values = test["values"]
-            self.field = [Square(i, blacks[i] == "1", "123456789" if values[i] == "0" else values[i]) for i in
+            self.squares = [Square(i, blacks[i] == "1", "123456789" if values[i] == "0" else values[i]) for i in
                           range(81)]
+            self.collect_streets()
         else:
-            self.field = [Square(i) for i in range(81)]
-
+            self.squares = [Square(i) for i in range(81)]
+    
+    def solve(self):
+        last_perf = 0
+        current_perf = 1
+        while (last_perf != current_perf):
+            last_perf = self.get_total_length()
+            self.eliminate_possibilities()
+            current_perf = self.get_total_length()
+            if self.is_solved():
+                return True
+        return False
+    
+    def is_solved(self):
+        for s in self:
+            if not s.is_number() and not s.is_black:
+                return False
+        return True
+    
     def collect_streets(self):
-        for square in self.get_squares():
-            if not square.is_black():
+        for square in self:
+            if not square.is_black:
                 s = self.get_hstreet(square)
                 if s != None:
                     self.streets.add(s)
@@ -24,42 +42,30 @@ class Field:
                 if s != None:
                     self.streets.add(s)
 
-    def iter_streets(self):
-        for s in self.streets:
-            yield s
-
-    def get_squarexy(self, x, y):
-        if x < 0 or x >= 9 or y < 0 or y >= 9:
-            raise NameError("OutOfBounds")
+    def __getitem__(self,i):
+        if isinstance(i,tuple):
+            x,y = i
+            if x < 0 or x >= 9 or y < 0 or y >= 9:
+                raise IndexError
+            i = y * 9 + x
         try:
-            return self.get_square(y * 9 + x)
+            return self.squares[i]
         except:
             raise
-
-    def get_square(self, i):
-        if i >= 81 or i < 0:
-            raise NameError("OutOfBounds")
-        else:
-            return self.field[i]
-
-    def get_squares(self):
-        for f in self.field:
-            yield f
-
-    def get_filled_squares(self):
-        for s in self.get_squares():
-            if s.is_number():
-                yield s
+    
+    def __iter__(self):
+        for s in self.squares:
+            yield s
 
     def get_row(self, square, without_square=False):
         for i in range(9):
-            s = self.get_squarexy(i, square.y)
+            s = self[i, square.y]
             if not without_square or s != square:
                 yield s
 
     def get_column(self, square, without_square=False):
         for i in range(9):
-            s = self.get_squarexy(square.x, i)
+            s = self[square.x, i]
             if not without_square or s != square:
                 yield s
 
@@ -67,15 +73,15 @@ class Field:
         x = square.x
         y = square.y
         street = {square}
-        if x - 1 >= 0 and not self.get_squarexy(x - 1, y).is_black():
+        if x - 1 >= 0 and not self[x - 1, y].is_black:
             return None
         for i in range(1, 10):
             try:
-                if not self.get_squarexy(x + i, y).is_black():
-                    street.add(self.get_squarexy(x + i, y))
+                if not self[x + i, y].is_black:
+                    street.add(self[x + i, y])
                 else:
                     return Street(street)
-            except:
+            except IndexError:
                 return Street(street)
         # print("Square {} is in street of length {}".format(str(square),len(street)))
         return Street(street)
@@ -84,12 +90,12 @@ class Field:
         x = square.x
         y = square.y
         street = {square}
-        if y - 1 >= 0 and not self.get_squarexy(x, y - 1).is_black():
+        if y - 1 >= 0 and not self[x, y - 1].is_black:
             return None
         for i in range(1, 10):
             try:
-                if not self.get_squarexy(x, y + i).is_black():
-                    street.add(self.get_squarexy(x, y + i))
+                if not self[x, y + i].is_black:
+                    street.add(self[x, y + i])
                 else:
                     return Street(street)
             except:
@@ -101,13 +107,13 @@ class Field:
         if street.is_horizontal:
             y = street.y
             for x in range(9):
-                if not self.get_squarexy(x, y) in street:
-                    yield self.get_squarexy(x, y)
+                if not self[x, y] in street:
+                    yield self[x, y]
         else:
             x = street.x
             for y in range(9):
-                if not self.get_squarexy(x, y) in street:
-                    yield self.get_squarexy(x, y)
+                if not self[x, y] in street:
+                    yield self[x, y]
 
     def remove_street_options_from_rest(self, street):
         street_options = street.get_options()
@@ -122,9 +128,10 @@ class Field:
                     s.remove_option(o)
 
     def eliminate_possibilities(self):
-        for square in self.get_filled_squares():
-            self.eliminate_rowcol(square)
-        for street in self.iter_streets():
+        for square in self:
+            if square.is_number():
+                self.eliminate_rowcol(square)
+        for street in self.streets:
             street.eliminate_nonconsec()
             self.remove_street_options_from_rest(street)
             for square in street:
@@ -138,48 +145,43 @@ class Field:
         for s in self.get_column(square,True):
             s.remove_option(v)
   
-    def construct_output(self, show_hints=False):
-        s = ""
-        sa = []
+    def _construct_output(self, show_hints=False):
+        rowsep = "+-------" * 9 + "+\n"
+        rowstart = ["|  "]*3
+        output = rowsep
+        sa = rowstart
         for i in range(81):
-            if i % 9 == 0:
-                s += "\n".join(sa) + "\n"
-                s += "+-------" * 9 + "+\n"
-                sa = ["|  ", "|  ", "|  "]
-            if self.get_square(i).is_black():
-                if not self.get_square(i).is_number():
-                    sa = [sa[i] + "\u2588\u2588\u2588" for i in range(3)]
-                else:
-                    sa[0] += "\u2588\u2588\u2588"
-                    sa[1] += ("\u2588" + self.get_square(i).get_value() + "\u2588")
-                    sa[2] += "\u2588\u2588\u2588"
+            s = self[i]
+            placeholder = "\u2588" if s.is_black else " " 
+            if s.is_number():
+                sa = [sa[r] + placeholder + (s.get_value() if r == 1 else placeholder) 
+                        + placeholder for r in range(3)]
             else:
-                if self.get_square(i).is_number():
-                    sa[0] += "   "
-                    sa[1] += " " + self.get_square(i).get_value() + " "
-                    sa[2] += "   "
+                if show_hints and not s.is_black:
+                    o = self[i].get_options()
+                    options = "".join([str(r) if str(r) in o else placeholder for r in range(1, 10)])
+                    sa = [sa[r] + options[3 * r:3 * (r + 1)] for r in range(3)]
                 else:
-                    if show_hints:
-                        o = self.get_square(i).get_options()
-                        options = "".join([str(i) if str(i) in o else " " for i in range(1, 10)])
-                        sa = [sa[i] + options[3 * i:3 * (i + 1)] for i in range(3)]
-                    else:
-                        sa = [sa[i] + "   " for i in range(3)]
-            sa = [sa[i] + "  |  " for i in range(3)]
-        s += "\n".join(sa) + "\n" + "+-------" * 9 + "+"
-        return s
+                    sa = [sa[r] + placeholder*3 for r in range(3)]
+            
+            sa = [sa[r] + "  |  " for r in range(3)]
+            if (i+1) % 9 == 0:
+                output += "\n".join(sa) + "\n"
+                output += rowsep
+                sa = rowstart
+        return output[:-1]
 
     def __str__(self):
-        return self.construct_output()
+        return self._construct_output()
 
     def show(self):
         print(str(self))
         return str(self)    
     
     def show_hints(self):
-        s = self.construct_output(True)
+        s = self._construct_output(True)
         print(s)
         return s
 
     def get_total_length(self):
-        return len("".join(s.get_options() for s in self.get_squares()))
+        return len("".join(s.get_options() for s in self))
