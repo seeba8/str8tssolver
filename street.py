@@ -1,6 +1,3 @@
-from square import Square
-
-
 class Street:
     def __init__(self, street):
         self.street = street
@@ -8,7 +5,7 @@ class Street:
         self._x = self._getx()
         self._h = self._is_horizontal()
         self._v = self._is_vertical()
-        
+
     def __contains__(self,s):
         return s in self.street
 

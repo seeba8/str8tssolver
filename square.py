@@ -20,17 +20,6 @@ class Square:
     def is_number(self):
         return len(self.val) == 1
 
-    #def getx(self):
-        #return self.x
-
-    #def gety(self):
-        #return self.y
-
-    def set_value(self, v):
-        if self.is_black():
-            raise Exception
-        self.val = v
-    
     # def __int__(self):
         # if self.is_number(): 
             # return int(self.val)

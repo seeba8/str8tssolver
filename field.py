@@ -1,8 +1,6 @@
 from square import Square
 from street import Street
-from colours import Colours
-
-
+     
 class Field:
     def __init__(self, test=None):
         self.streets = set()
@@ -83,7 +81,6 @@ class Field:
                     return Street(street)
             except IndexError:
                 return Street(street)
-        # print("Square {} is in street of length {}".format(str(square),len(street)))
         return Street(street)
 
     def get_vstreet(self, square):
@@ -100,7 +97,6 @@ class Field:
                     return Street(street)
             except:
                 return Street(street)
-        # print("Square {} is in street of length {}".format(str(square),len(street)))
         return Street(street)
 
     def get_rest_without_street(self, street):
@@ -116,15 +112,16 @@ class Field:
                     yield self[x, y]
 
     def remove_street_options_from_rest(self, street):
+        """
+        e.g.: if len(street) == 2 and street_options = {1,2,3}, then
+        one value in the middle, {2}, can be removed
+        """
         street_options = street.get_options()
         if len(street_options) < 9 and len(street_options) < len(street) * 2:
             removables = ("".join(sorted(street_options))[len(street_options) -
                                                           len(street):len(street)])
-            streetsum = ""
             for o in removables:
-                streetsum = ""
                 for s in self.get_rest_without_street(street):
-                    streetsum += str(s)
                     s.remove_option(o)
 
     def eliminate_possibilities(self):
